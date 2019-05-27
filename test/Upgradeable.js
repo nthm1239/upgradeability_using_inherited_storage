@@ -1,36 +1,50 @@
-const TokenV1_0 = artifacts.require('TokenV1_0')
-const TokenV1_1 = artifacts.require('TokenV1_1')
+const Business = artifacts.require('BusinessContract')
+const Business_v2 = artifacts.require('BusinessContract_v2')
+const IBusiness = artifacts.require('IBusiness')
 
 const Registry = artifacts.require('Registry')
 const Proxy = artifacts.require('UpgradeabilityProxy')
 
-contract('Upgradeable', function ([sender, receiver]) {
+contract('Upgradeable', function (accounts) {
 
-  it('should work', async function () {
-    const impl_v1_0 = await TokenV1_0.new()
-    const impl_v1_1 = await TokenV1_1.new()
+  it('Business_v1', async function () {
+
+    const business = await Business.new()
+    const business_v2 = await Business_v2.new()
 
     const registry = await Registry.new()
-    await registry.addVersion("1.0", impl_v1_0.address)
-    await registry.addVersion("1.1", impl_v1_1.address)
+    await registry.addVersion("1.0", business.address)
 
     const {logs} = await registry.createProxy("1.0")
 
     const {proxy} = logs.find(l => l.event === 'ProxyCreated').args
 
-    await TokenV1_0.at(proxy).mint(sender, 100)
+    await IBusiness.at(proxy).addActivity(accounts[0],1);
 
-    await Proxy.at(proxy).upgradeTo("1.1")
+    // get point from proxy
+    var result_from_proxy = await Business.at(proxy).getTotalPoint(accounts[0]);
+    assert.equal(result_from_proxy, 10, "エラー：Proxyにデータが登録されていない")
 
-    await TokenV1_1.at(proxy).mint(sender, 100)
+    // get point from business
+    var result_from_business = await business.getTotalPoint(accounts[0]);
+    assert.equal(result_from_business, 0, "エラー：Businessにデータが登録されている")
 
-    const transferTx = await TokenV1_1.at(proxy).transfer(receiver, 10, { from: sender })
+    // ==========================================
 
-    console.log("Transfer TX gas cost using Inherited Storage Proxy", transferTx.receipt.gasUsed);
+    // Upgrade
+    await registry.addVersion("2.0", business_v2.address)
+    await Proxy.at(proxy).upgradeTo("2.0")
 
-    const balance = await TokenV1_1.at(proxy).balanceOf(sender)
-    assert(balance.eq(10190))
+    await IBusiness.at(proxy).addActivity(accounts[0],1);
 
+    // get point from proxy
+    var result_from_proxy = await Business.at(proxy).getTotalPoint(accounts[0]);
+    assert.equal(result_from_proxy, 110, "エラー：Proxyにデータが登録されていない")
+
+    // get point from business
+    var result_from_business = await business.getTotalPoint(accounts[0]);
+    assert.equal(result_from_business, 0, "エラー：Businessにデータが登録されている")
+  
   })
 
 })

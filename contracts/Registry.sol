@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity >=0.4.0 <0.6.0;
 
 import './IRegistry.sol';
 import './Upgradeable.sol';
@@ -17,7 +17,7 @@ contract Registry is IRegistry {
   * @param version representing the version name of the new implementation to be registered
   * @param implementation representing the address of the new implementation to be registered
   */
-  function addVersion(string calldata version, address implementation) external {
+  function addVersion(string version, address implementation) external {
     require(versions[version] == address(0x0));
     versions[version] = implementation;
     // emit event
@@ -29,7 +29,7 @@ contract Registry is IRegistry {
   * @param version to query the implementation of
   * @return address of the implementation registered for the given version
   */
-  function getVersion(string calldata version) external view returns (address) {
+  function getVersion(string version) external view returns (address) {
     return versions[version];
   }
 
