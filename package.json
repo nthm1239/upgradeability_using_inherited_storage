@@ -8,6 +8,6 @@
     "test": "truffle test"
   },
   "devDependencies": {
-    "truffle": "^4.0.4"
+    "truffle": "^5.8.4"
   }
 }
